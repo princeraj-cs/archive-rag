@@ -8,11 +8,11 @@ from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.retrievers import BaseRetriever
-from langchain_openai import ChatOpenAI
 from pydantic import Field
 
 from app.config import get_settings
 from app.ingest import has_vector_store, load_vector_store
+from app.llm import get_chat_model
 from app.models import HistoryMessage
 from app.wikipedia_tool import wikipedia_search
 
@@ -84,11 +84,7 @@ def get_rag_chain(enabled_document_ids: tuple[str, ...] = ()):
             ("human", "Question: {input}"),
         ]
     )
-    model = ChatOpenAI(
-        model=settings.chat_model,
-        temperature=0,
-        api_key=settings.openai_api_key,
-    )
+    model = get_chat_model()
     document_chain = create_stuff_documents_chain(model, prompt)
     retriever = ThresholdRetriever(
         vector_store=vector_store,
@@ -112,13 +108,8 @@ def _to_langchain_history(history: list[HistoryMessage]) -> list[HumanMessage | 
 
 
 @lru_cache
-def get_general_model() -> ChatOpenAI:
-    settings = get_settings()
-    return ChatOpenAI(
-        model=settings.chat_model,
-        temperature=0,
-        api_key=settings.openai_api_key,
-    )
+def get_general_model():
+    return get_chat_model()
 
 
 def _standalone_question(question: str, history: list[HistoryMessage]) -> str:

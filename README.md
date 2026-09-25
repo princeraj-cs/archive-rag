@@ -2,7 +2,7 @@
 
 **A local, source-grounded Q&A workspace for the documents that matter.**
 
-Archive lets you upload PDF and TXT files, index them locally, and ask questions with answers that keep their source trail attached. It combines a FastAPI backend, a React/Vite interface, OpenAI models, and a persistent Chroma vector store.
+Archive lets you upload PDF and TXT files, index them locally, and ask questions with answers that keep their source trail attached. It combines a FastAPI backend, a React/Vite interface, configurable OpenAI or Ollama models, and a persistent Chroma vector store.
 
 ## What it does
 
@@ -19,7 +19,7 @@ Archive lets you upload PDF and TXT files, index them locally, and ask questions
 Browser (React + Vite)
 				|
 				v
-FastAPI API  --->  OpenAI embeddings  --->  ChromaDB
+FastAPI API  --->  OpenAI or Ollama models  --->  ChromaDB
 				|
 				+------>  Retrieval + context-only answer generation
 				|
@@ -32,7 +32,7 @@ Uploaded files are split into overlapping chunks, embedded, and stored in Chroma
 
 - Python 3.11 or newer
 - Node.js 18 or newer and npm
-- An OpenAI API key
+- An OpenAI API key, or Ollama installed locally
 
 ## Getting started
 
@@ -68,7 +68,28 @@ copy .env.example .env
 
 On macOS/Linux, use `cp .env.example .env` instead of `copy`.
 
-Open `backend/.env` and set `OPENAI_API_KEY` to your key.
+Open `backend/.env` and choose a model provider. OpenAI is the default. For a fully local setup, use:
+
+```dotenv
+MODEL_PROVIDER=ollama
+CHAT_MODEL=llama3.2
+EMBEDDING_MODEL=nomic-embed-text
+OLLAMA_BASE_URL=http://localhost:11434
+OPENAI_API_KEY=""
+```
+
+Install Ollama from [ollama.com](https://ollama.com), then download the models in a separate terminal:
+
+```bash
+ollama pull llama3.2
+ollama pull nomic-embed-text
+```
+
+Ollama must be running at `http://localhost:11434` before starting the API. `OLLAMA_BASE_URL` can be changed if it is running elsewhere.
+
+To keep using OpenAI, set `MODEL_PROVIDER=openai` and provide `OPENAI_API_KEY` instead.
+
+When switching embedding providers, delete `backend/chroma_db/` and upload the documents again. Embeddings from different providers are not interchangeable.
 
 ### 2. Start the API
 
@@ -105,7 +126,9 @@ Backend settings are read from `backend/.env`:
 
 | Variable                  | Default                  | Purpose                                                  |
 | ------------------------- | ------------------------ | -------------------------------------------------------- |
-| `OPENAI_API_KEY`          | Required                 | OpenAI authentication                                    |
+| `MODEL_PROVIDER`          | `openai`                 | Model backend: `openai` or `ollama`                      |
+| `OPENAI_API_KEY`          | Empty for Ollama         | OpenAI authentication                                    |
+| `OLLAMA_BASE_URL`         | `http://localhost:11434` | Ollama server URL                                        |
 | `CHAT_MODEL`              | `gpt-4o-mini`            | Chat and fallback model                                  |
 | `EMBEDDING_MODEL`         | `text-embedding-3-small` | Document embedding model                                 |
 | `CHROMA_PERSIST_DIR`      | `./chroma_db`            | Persistent vector-store directory, relative to `backend` |
@@ -154,6 +177,7 @@ backend/
 		main.py              FastAPI application
 		routers/             Upload and query endpoints
 		ingest.py            Document loading, chunking, and vector storage
+		llm.py               OpenAI/Ollama model factories
 		rag_chain.py         Retrieval and answer generation
 		wikipedia_tool.py    Optional Wikipedia fallback
 	data/source_docs/      Uploaded source files

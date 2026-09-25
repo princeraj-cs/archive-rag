@@ -7,7 +7,9 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
-    openai_api_key: str
+    model_provider: str = "openai"
+    openai_api_key: str = ""
+    ollama_base_url: str = "http://localhost:11434"
     chroma_persist_dir: str = "./chroma_db"
     chroma_collection_name: str = "rag_documents"
     embedding_model: str = "text-embedding-3-small"

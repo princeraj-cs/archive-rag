@@ -2,18 +2,10 @@ from pathlib import Path
 
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import get_chroma_persist_dir, get_collection_name, get_settings
-
-
-def _embeddings() -> OpenAIEmbeddings:
-    settings = get_settings()
-    return OpenAIEmbeddings(
-        model=settings.embedding_model,
-        api_key=settings.openai_api_key,
-    )
+from app.llm import get_embedding_model
 
 
 def build_vector_store(
@@ -47,7 +39,7 @@ def build_vector_store(
                 "document_id": document_id,
             }
         )
-    embeddings = _embeddings()
+    embeddings = get_embedding_model()
     vector_store = Chroma(
         persist_directory=str(persist_dir),
         embedding_function=embeddings,
@@ -60,7 +52,7 @@ def build_vector_store(
 def load_vector_store() -> Chroma:
     return Chroma(
         persist_directory=str(get_chroma_persist_dir()),
-        embedding_function=_embeddings(),
+        embedding_function=get_embedding_model(),
         collection_name=get_collection_name(),
     )
 

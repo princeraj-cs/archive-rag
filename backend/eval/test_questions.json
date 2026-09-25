@@ -1,0 +1,6 @@
+[
+  {
+    "question": "Replace this with a question answered by your documents.",
+    "expected_answer_contains": ["replace"]
+  }
+]
